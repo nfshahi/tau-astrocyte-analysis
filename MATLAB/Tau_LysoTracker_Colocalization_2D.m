@@ -1,15 +1,13 @@
 %% ---------------------------------------------------------
-% Batch correlation across subfolders
-% Reference-based thresholding:
-% CY5 threshold from C*, GFP threshold from B*
-% Correlation only for selected parameters (e.g., A* and D*)
-% Export results to Excel and plot vs time
-% ---------------------------------------------------------
+% Calculate Pearson correlation between CY5 and GFP channels
+% at each imaging time point using reference-based thresholds.
+% Results are exported to Excel and plotted over time.
+%% ---------------------------------------------------------
 
 clear; clc; close all
 
 %% -------------------------------
-% USER PARAMETERS
+% Set analysis parameters
 %% -------------------------------
 mainFolder = 'RAWDATA';  % Main folder containing subfolders 1,2,3,...
 CY5_refLetter = 'C';              % Reference group for CY5 threshold
@@ -20,7 +18,7 @@ analyzeLetters = {'A','B','C','D'};       % Only analyze these parameters
 excelFile = 'CorrelationResults.xlsx';
 
 %% -------------------------------
-% List all subfolders (time points)
+% Find and sort time point folders
 %% -------------------------------
 subFolders = dir(mainFolder);
 subFolders = subFolders([subFolders.isdir]);
@@ -32,14 +30,14 @@ folderNums = str2double({subFolders.name});   % convert names to numeric
 folderNames = {subFolders(sortIdx).name};    % sorted folder names as strings
 
 %% -------------------------------
-% Preallocate result storage
+% Initialize result storage
 %% -------------------------------
 allParams = {};  % store all A*, D* parameter names encountered
 timePoints = folderNums(sortIdx);  % sorted times
 allResults = []; % will store numeric correlation results
 
 %% -------------------------------
-% Iterate over subfolders (time points)
+% Process each time point
 %% -------------------------------
 for f = 1:length(folderNames)
     subFolder = folderNames{f};
@@ -80,7 +78,7 @@ for f = 1:length(folderNames)
     end
 
     % -------------------------------
-    % Compute reference thresholds
+    % Calculate reference thresholds
     % -------------------------------
     CY5_vals = [];
     GFP_vals = [];
@@ -113,7 +111,7 @@ for f = 1:length(folderNames)
     GFP_thresh = mean(GFP_vals);
 
     %% -------------------------------
-    % Correlation calculation for selected parameters
+    % Calculate correlation for each parameter
     %% -------------------------------
     corrResults = struct();
     for p = 1:length(params)
@@ -167,7 +165,7 @@ for f = 1:length(folderNames)
             if isempty(v1_use)
                 corrVal = NaN;
             else
-%%%%%%----------%%%%%%  matlab corrcoef function (pearson correlation)
+                % Calculate Pearson correlation coefficient
                 R = corrcoef(v1_use,v2_use);
                 corrVal = R(1,2);
             end
@@ -177,7 +175,7 @@ for f = 1:length(folderNames)
     end
 
     % -------------------------------
-    % Store results in numeric array row
+    % Store results for the current time point
     % -------------------------------
     row = NaN(1,length(allParams));  % numeric row
     for a = 1:length(allParams)
@@ -191,7 +189,7 @@ for f = 1:length(folderNames)
 end
 
 %% -------------------------------
-% Create final table
+% Create results table
 %% -------------------------------
 T = table(timePoints', 'VariableNames', {'Time'});
 for a = 1:length(allParams)
@@ -199,13 +197,13 @@ for a = 1:length(allParams)
 end
 
 % -------------------------------
-% Export to Excel
+% Export results to Excel
 % -------------------------------
 writetable(T, excelFile);
 fprintf('\nResults exported to %s\n', excelFile);
 
 %% -------------------------------
-% Plot correlation vs time
+% Plot correlation over time
 %% -------------------------------
 figure('Name','Correlation vs Time','NumberTitle','off'); hold on;
 colors = lines(length(allParams));
@@ -219,4 +217,3 @@ ylabel('Pearson correlation');
 title('Correlation vs Time');
 legend('show','Location','best');
 grid on;
-
